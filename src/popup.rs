@@ -10,7 +10,7 @@ pub enum PopupTarget
 
 impl Default for PopupTarget
 {
-    fn default()->Self {Self::Entity(u32::default())}
+    fn default()->Self {Self::Point(Point::new(100.0,100.0))}
 }
 
 impl From<u32> for PopupTarget {
@@ -63,6 +63,10 @@ impl RelativePosition
             Self::Right(distance)=>*distance,
         }
     }
+    pub fn to_top(self)->Self {Self::Top(self.get_distance())}
+    pub fn to_bottom(self)->Self {Self::Bottom(self.get_distance())}
+    pub fn to_left(self)->Self {Self::Left(self.get_distance())}
+    pub fn to_right(self)->Self {Self::Right(self.get_distance())}
 }
 
 /*
@@ -81,14 +85,26 @@ impl From<usize> for RelativePosition {
 */
 into_property_source!(RelativePosition);
 
+/// The `PopupAction` represent actions that can be sent to `PopupState`.
+pub enum PopupAction
+{
+    UpdatePosition,
+    UpdateVisibility
+}
 
 /// The `PopupState` handles the open and close behavior of the `Popup` widget.
 #[derive(Default, AsAny)]
-pub struct PopupState {}
+pub struct PopupState
+{
+    actions: Vec<PopupAction>
+}
 
 impl PopupState
 {
-    fn update_position(&mut self, _registry: &mut Registry, ctx: &mut Context)
+    pub fn update_position(&mut self) {self.actions.push(PopupAction::UpdatePosition);}
+    pub fn update_visibility(&mut self) {self.actions.push(PopupAction::UpdateVisibility);}
+
+    fn update_position_internal(&mut self, _registry: &mut Registry, ctx: &mut Context)
     {
         if let Some(target) = ctx.widget().try_clone::<PopupTarget>("target") {
 
@@ -100,7 +116,6 @@ impl PopupState
                 {
                     //WARNING: this is true only if called during post_layout_update, otherwise the bounds will refere to space available to the widget, not the effective size
                     let target_bounds: Rectangle = ctx.get_widget(entity.into()).clone("bounds");
-
                     target_bounds
                 }
                 PopupTarget::Point(mut point)=>
@@ -112,7 +127,6 @@ impl PopupState
             };
 
             let relative_position: RelativePosition = ctx.widget().clone_or_default("relative_position");
-
             let popup_position = match relative_position
             {
                 RelativePosition::Left(distance)=>
@@ -150,15 +164,7 @@ impl PopupState
 
 impl State for PopupState {
     fn init(&mut self, _registry: &mut Registry, _ctx: &mut Context) {
-        println!("Init");
-        /*
-        ctx.widget().set("visibility", Visibility::Hidden);
-        self.update_position(registry,ctx);
-        let popup = ctx.entity;
-        println!("Popup entity from PopupState: {}",popup.0);
-        ctx.build_context().append_child_to_overlay(popup).expect("Failed to add popup to overlay");
-        ctx.widget().update_dirty(true);
-        */
+        self.update_position();
     }
 /*
     fn update(&mut self, _: &mut Registry, ctx: &mut Context) {
@@ -166,7 +172,22 @@ impl State for PopupState {
     }
 */
     fn update_post_layout(&mut self, registry: &mut Registry, ctx: &mut Context) {
-        self.update_position(registry,ctx);
+        let actions: Vec<PopupAction> = self.actions.drain(..).collect();
+        for action in actions {
+            match action {
+                PopupAction::UpdatePosition=>self.update_position_internal(registry,ctx),
+                PopupAction::UpdateVisibility=>
+                {
+                    let mut widget = ctx.widget();
+                    let visibility = widget.get_mut::<Visibility>("visibility");
+                    match visibility
+                    {
+                        Visibility::Hidden=>*visibility = Visibility::Collapsed,
+                        _=>()
+                    }
+                }
+            }
+        }
     }
 
 }
@@ -193,10 +214,7 @@ widget!(
         target: PopupTarget,
 
         /// Sets or shares the popup position relative to the target.
-        relative_position: RelativePosition,
-
-        /// Sets or shares the popup distance from the target.
-        distance: f64
+        relative_position: RelativePosition
     }
 );
 
@@ -209,8 +227,16 @@ impl Template for Popup {
             .border_radius(0.0)
             .border_width(0.0)
             .border_brush("transparent")
-            .distance(1.0)
             .on_mouse_down(|_, _| true)
+            .on_changed_filter(vec!["relative_position","target","visibility"])
+            .on_changed(move |states, entity, property| {
+                match property{
+                    "relative_position"|"target"=>states.get_mut::<PopupState>(entity).update_position(),
+                    "visibility"=>states.get_mut::<PopupState>(entity).update_visibility(),
+                    _=>()
+                }
+
+            })
     }
 
     fn render_object(&self) -> Box<dyn RenderObject> {
