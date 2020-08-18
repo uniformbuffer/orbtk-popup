@@ -7,6 +7,8 @@ Lastly it have a `relative_position` property that select the position relative 
 The relative position could be Top,Bottom,Left,Right.
 In future, a radiant based implementation could be used, so the user could place the popup everywhere around the target.
 
+![alt text](https://github.com/uniformbuffer/orbtk-popup/blob/master/image.png?raw=true)
+
 What work:
 - Relative position to a target, including distance.
 - Target can be a point or an entity.
