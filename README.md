@@ -13,7 +13,7 @@ What work:
 - Relative position to a target, including distance.
 - Target can be a point or an entity.
 - Popup show and hidden.
-- Visibility correction: if visibility is setted to Hidden, the popup will change to Collapsed
+- Visibility correction: if visibility is setted to Hidden, the popup will change it to Collapsed
 
 What not work:
 - The popup is decentered. Formulas look like correct. This happen only when the target is an entity; if it is a point it is positioned correctly.
