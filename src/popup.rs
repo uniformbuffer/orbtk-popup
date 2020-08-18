@@ -126,6 +126,8 @@ impl PopupState
                 }
             };
 
+            println!("Target bounds: {:#?}",real_target_bounds);
+
             let relative_position: RelativePosition = ctx.widget().clone_or_default("relative_position");
             let popup_position = match relative_position
             {
@@ -155,6 +157,7 @@ impl PopupState
             {
                 bounds.set_x(popup_position.0);
                 bounds.set_y(popup_position.1);
+                println!("Popup bounds: {:#?}",bounds);
             }
             else{println!("Cannot set popup position: missing \"bounds\" property");}
         }

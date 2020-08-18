@@ -21,4 +21,5 @@ What not work:
 - I would like the popup is able to add itself to the overlay layer during template constructor, but i have not found a way to do it.
 
 What can be improved:
+- Reposition the popup if there is no space available
 - Radiant based implementation for RelativePosition to improve precision. It's a good idea to keep current RelativePosition enum values, so user do not have to think about radiants. Add a new enum value called Radiant(f64).
