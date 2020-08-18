@@ -18,7 +18,7 @@ What work:
 What not work:
 - The popup is decentered. Formulas look like correct. This happen only when the target is an entity; if it is a point it is positioned correctly.
 - I have not tested it, but teoretically if the target entity move, the popup is not aware of it, so it will stand still.
-- I would like the popup is able to add itself to the overlay layer during template constructor, but i have not found a way to do it
+- I would like the popup is able to add itself to the overlay layer during template constructor, but i have not found a way to do it.
 
 What can be improved:
 - Radiant based implementation for RelativePosition to improve precision. It's a good idea to keep current RelativePosition enum values, so user do not have to think about radiants. Add a new enum value called Radiant(f64).
