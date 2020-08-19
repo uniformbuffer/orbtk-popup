@@ -109,13 +109,18 @@ impl PopupState
         if let Some(target) = ctx.widget().try_clone::<PopupTarget>("target") {
 
             let current_bounds: Rectangle = ctx.widget().clone("bounds");
+            //let current_h_align: Alignment = ctx.widget().clone("h_align");
+            //let current_v_align: Alignment = ctx.widget().clone("v_align");
 
             let real_target_bounds = match target
             {
                 PopupTarget::Entity(entity)=>
                 {
+                    let target_position: Point = ctx.get_widget(entity.into()).clone("position");
+
                     //WARNING: this is true only if called during post_layout_update, otherwise the bounds will refere to space available to the widget, not the effective size
-                    let target_bounds: Rectangle = ctx.get_widget(entity.into()).clone("bounds");
+                    let mut target_bounds: Rectangle = ctx.get_widget(entity.into()).clone("bounds");
+                    target_bounds.set_position(target_position);
                     target_bounds
                 }
                 PopupTarget::Point(mut point)=>
@@ -126,9 +131,103 @@ impl PopupState
                 }
             };
 
-            println!("Target bounds: {:#?}",real_target_bounds);
-
             let relative_position: RelativePosition = ctx.widget().clone_or_default("relative_position");
+
+            let new_popup_bounds = match relative_position
+            {
+
+                RelativePosition::Left(distance)=>
+                {
+                    let v_align: Alignment = ctx.widget().clone::<Alignment>("v_align");
+
+                    let x = real_target_bounds.x() - current_bounds.width() - distance;
+                    let y = v_align.align_position(
+                        real_target_bounds.height(),
+                        current_bounds.height(),
+                        real_target_bounds.y(),
+                        real_target_bounds.y()+real_target_bounds.height()
+                    );
+
+                    let width = current_bounds.width();
+                    let height = v_align.align_measure(
+                        real_target_bounds.height(),
+                        current_bounds.height(),
+                        real_target_bounds.y(),
+                        real_target_bounds.y()+real_target_bounds.height()
+                    );
+
+                    Rectangle::new((x,y),(width,height))
+                }
+                RelativePosition::Right(distance)=>
+                {
+                    let v_align: Alignment = ctx.widget().clone::<Alignment>("v_align");
+
+                    let x = real_target_bounds.x() + real_target_bounds.width() + distance;
+                    let y = v_align.align_position(
+                        real_target_bounds.height(),
+                        current_bounds.height(),
+                        real_target_bounds.y(),
+                        real_target_bounds.y()+real_target_bounds.height()
+                    );
+
+                    let width = current_bounds.width();
+                    let height = v_align.align_measure(
+                        real_target_bounds.height(),
+                        current_bounds.height(),
+                        real_target_bounds.y(),
+                        real_target_bounds.y()+real_target_bounds.height()
+                    );
+
+                    Rectangle::new((x,y),(width,height))
+                }
+                RelativePosition::Top(distance)=>
+                {
+                    let h_align: Alignment = ctx.widget().clone::<Alignment>("h_align");
+                    let x = h_align.align_position(
+                        real_target_bounds.width(),
+                        current_bounds.width(),
+                        real_target_bounds.x(),
+                        real_target_bounds.x()+real_target_bounds.width()
+                    );
+                    let y = real_target_bounds.y() - current_bounds.height() - distance;
+                    let width = h_align.align_measure(
+                        real_target_bounds.width(),
+                        current_bounds.width(),
+                        real_target_bounds.x(),
+                        real_target_bounds.x()+real_target_bounds.width()
+                    );
+                    let height = current_bounds.height();
+
+                    Rectangle::new((x,y),(width,height))
+                }
+                RelativePosition::Bottom(distance)=>
+                {
+                    println!("Available {}",real_target_bounds.width());
+                    println!("Measure {}",current_bounds.width());
+                    println!("Margin start {}",real_target_bounds.x());
+                    println!("Margin end {}",real_target_bounds.x()+real_target_bounds.width());
+
+                    let h_align: Alignment = ctx.widget().clone::<Alignment>("h_align");
+                    let x = h_align.align_position(
+                        real_target_bounds.width(),
+                        current_bounds.width(),
+                        real_target_bounds.x(),
+                        real_target_bounds.x()+real_target_bounds.width()
+                    );
+                    let y = real_target_bounds.y() + real_target_bounds.height() + distance;
+                    let width = h_align.align_measure(
+                        real_target_bounds.width(),
+                        current_bounds.width(),
+                        real_target_bounds.x(),
+                        real_target_bounds.x()+real_target_bounds.width()
+                    );
+                    let height = current_bounds.height();
+
+                    Rectangle::new((x,y),(width,height))
+                }
+            };
+
+            /*
             let popup_position = match relative_position
             {
                 RelativePosition::Left(distance)=>
@@ -152,14 +251,8 @@ impl PopupState
                     (target_x_center - current_bounds.width()/2.0,real_target_bounds.y() + real_target_bounds.height() + distance)
                 }
             };
-
-            if let Some(bounds) = ctx.widget().try_get_mut::<Rectangle>("bounds")
-            {
-                bounds.set_x(popup_position.0);
-                bounds.set_y(popup_position.1);
-                println!("Popup bounds: {:#?}",bounds);
-            }
-            else{println!("Cannot set popup position: missing \"bounds\" property");}
+            */
+            ctx.widget().set::<Rectangle>("bounds",new_popup_bounds);
         }
         else {println!("Target not found");}
     }
@@ -169,11 +262,7 @@ impl State for PopupState {
     fn init(&mut self, _registry: &mut Registry, _ctx: &mut Context) {
         self.update_position();
     }
-/*
-    fn update(&mut self, _: &mut Registry, ctx: &mut Context) {
 
-    }
-*/
     fn update_post_layout(&mut self, registry: &mut Registry, ctx: &mut Context) {
         let actions: Vec<PopupAction> = self.actions.drain(..).collect();
         for action in actions {
