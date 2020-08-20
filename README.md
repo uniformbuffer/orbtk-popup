@@ -15,12 +15,12 @@ What work:
 - Popup show and hidden.
 - Visibility correction: if visibility is setted to Hidden, the popup will change it to Collapsed
 - The popup use `h_align` or `v_align` and the `relative_position` to reposition itself on the window
+- The popup take into account `constraint` property to determine popup sizes.
 
 What not work:
 - On first load, the `position` property of the target is (0,0), making the popup to be wrongly positioned
 - I have not tested it, but teoretically if the target entity move, the popup is not aware of it, so it will stand still.
 - I would like the popup is able to add itself to the overlay layer during template constructor, but i have not found a way to do it.
-- After the popup move, it leave behind a sort of trail that disapper after a bit, i don't know what is it, need to investigate
 
 What can be improved:
 - Reposition the popup if there is no space available
